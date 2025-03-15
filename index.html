@@ -23,8 +23,8 @@
     .spinner {
       width: 50px;
       height: 50px;
-      border: 6px solid #ccc;       /* Light grey border */
-      border-top: 6px solid #1e90ff; /* Blue top border (acts like a highlight) */
+      border: 6px solid #ccc;         /* Light grey border */
+      border-top: 6px solid #1e90ff;  /* Blue top border (acts like a highlight) */
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
@@ -34,7 +34,7 @@
       100% { transform: rotate(360deg); }
     }
 
-    /* ==================== PAGE STYLES (example) ==================== */
+    /* ==================== PAGE STYLES ==================== */
     body {
       margin: 0;
       padding: 0;
@@ -86,7 +86,7 @@
     }
 
     .canvas-container {
-      width: 90vw;
+      width: 90vw;      /* container dimension in CSS pixels */
       max-width: 90vw;
       position: relative;
       display: block;
@@ -94,22 +94,25 @@
       cursor: grab;
       transition: opacity 0.1s ease-in-out;
     }
+
     canvas {
       position: absolute;
       top: 0;
       left: 0;
       border: 2px solid #2c2c2c;
+      /* We'll let JS set width/height in style & attribute */
     }
   </style>
 </head>
 <body>
-  <!-- SPINNER OVERLAY (hidden when images loaded) -->
+  <!-- SPINNER OVERLAY (hidden after images load) -->
   <div id="spinnerContainer">
     <div class="spinner"></div>
   </div>
 
   <h1 class="title">RSPP-HD Results</h1>
 
+  <!-- We'll hide these at first with "display: none" -->
   <div class="tab" id="tabsContainer" style="display: none;">
     <button id="btn50" class="tablinks active">50 ms</button>
     <button id="btn100" class="tablinks">100 ms</button>
@@ -139,7 +142,7 @@
     let dragDistance = 0;
     let isIsolated = false;
 
-    // =========== FETCH & PRE-LOAD IMAGES ===========
+    // ==================== FETCH & PRE-LOAD IMAGES ====================
 
     async function fetchImageLists() {
       try {
@@ -160,6 +163,7 @@
             });
           });
 
+          // Wait for all images in this set
           allImages[setKey] = await Promise.all(imagePromises); 
         }
 
@@ -180,7 +184,7 @@
       }
     }
 
-    // =========== SWITCH SETS ===========
+    // ==================== SWITCH SETS ====================
 
     function switchSets(pair) {
       let oldFraction = 0;
@@ -215,29 +219,48 @@
       clickedBtn.classList.add('active');
     }
 
-    // =========== RESIZING ===========
-
+    // ==================== RESIZING (DPR-AWARE) ====================
     function updateCanvasSize() {
-      let aspectRatio = 4050 / 1350; // 3:1
+      // Device pixel ratio for sharper rendering on mobile
+      let dpr = window.devicePixelRatio || 1;
+      
+      // Maintain 3:1 aspect ratio (4050/1350)
+      let aspectRatio = 4050 / 1350; // =3
       let maxWidth = window.innerWidth * 0.9;
       let maxHeight = window.innerHeight * 0.6;
       
       let newWidth = maxWidth;
       let newHeight = newWidth / aspectRatio;
 
+      // Enforce maxHeight if needed
       if (newHeight > maxHeight) {
         newHeight = maxHeight;
         newWidth = newHeight * aspectRatio;
       }
 
-      canvas1.width = newWidth;
-      canvas1.height = newHeight;
-      canvas2.width = newWidth;
-      canvas2.height = newHeight;
+      // 1) Set the *CSS* size of the canvas (visual size)
+      canvas1.style.width = newWidth + "px";
+      canvas1.style.height = newHeight + "px";
+      canvas2.style.width = newWidth + "px";
+      canvas2.style.height = newHeight + "px";
+
+      // 2) Set the *actual* drawing buffer size
+      canvas1.width = newWidth * dpr;
+      canvas1.height = newHeight * dpr;
+      canvas2.width = newWidth * dpr;
+      canvas2.height = newHeight * dpr;
+
+      // 3) Reset transform, then scale by DPR so drawing coords == CSS pixels
+      ctx1.setTransform(1, 0, 0, 1, 0, 0);
+      ctx2.setTransform(1, 0, 0, 1, 0, 0);
+
+      ctx1.scale(dpr, dpr);
+      ctx2.scale(dpr, dpr);
+
       drawImages();
     }
 
-    // =========== DRAW ===========
+    // ==================== DRAW ====================
 
     function drawImages() {
       let index = Math.floor(currentFrame);
@@ -251,39 +274,44 @@
       let currentImg1 = imagesSet1[index];
       let currentImg2 = imagesSet2[index];
 
+      // If we're at the last index, just draw them fully
       if (index >= imagesSet1.length - 1) {
         ctx1.globalAlpha = 1;
-        ctx1.drawImage(currentImg1, 0, 0, canvas1.width, canvas1.height);
+        ctx1.drawImage(currentImg1, 0, 0, canvas1.width / (window.devicePixelRatio || 1), canvas1.height / (window.devicePixelRatio || 1));
         ctx2.globalAlpha = 1;
-        ctx2.drawImage(currentImg2, 0, 0, canvas2.width, canvas2.height);
+        ctx2.drawImage(currentImg2, 0, 0, canvas2.width / (window.devicePixelRatio || 1), canvas2.height / (window.devicePixelRatio || 1));
         return;
       }
 
       let nextImg1 = imagesSet1[index + 1];
       let nextImg2 = imagesSet2[index + 1];
+
       let transitionStart = 0.7;
       let transitionEnd = 1.0;
 
       if (alpha < transitionStart) {
+        // Show current images fully
         ctx1.globalAlpha = 1;
-        ctx1.drawImage(currentImg1, 0, 0, canvas1.width, canvas1.height);
+        ctx1.drawImage(currentImg1, 0, 0, canvas1.width / (window.devicePixelRatio || 1), canvas1.height / (window.devicePixelRatio || 1));
         ctx2.globalAlpha = 1;
-        ctx2.drawImage(currentImg2, 0, 0, canvas2.width, canvas2.height);
+        ctx2.drawImage(currentImg2, 0, 0, canvas2.width / (window.devicePixelRatio || 1), canvas2.height / (window.devicePixelRatio || 1));
       } else {
+        // Blend in next image
         let blendAlpha = (alpha - transitionStart) / (transitionEnd - transitionStart);
+
         ctx1.globalAlpha = 1;
-        ctx1.drawImage(currentImg1, 0, 0, canvas1.width, canvas1.height);
+        ctx1.drawImage(currentImg1, 0, 0, canvas1.width / (window.devicePixelRatio || 1), canvas1.height / (window.devicePixelRatio || 1));
         ctx2.globalAlpha = 1;
-        ctx2.drawImage(currentImg2, 0, 0, canvas2.width, canvas2.height);
+        ctx2.drawImage(currentImg2, 0, 0, canvas2.width / (window.devicePixelRatio || 1), canvas2.height / (window.devicePixelRatio || 1));
 
         ctx1.globalAlpha = blendAlpha;
-        ctx1.drawImage(nextImg1, 0, 0, canvas1.width, canvas1.height);
+        ctx1.drawImage(nextImg1, 0, 0, canvas1.width / (window.devicePixelRatio || 1), canvas1.height / (window.devicePixelRatio || 1));
         ctx2.globalAlpha = blendAlpha;
-        ctx2.drawImage(nextImg2, 0, 0, canvas2.width, canvas2.height);
+        ctx2.drawImage(nextImg2, 0, 0, canvas2.width / (window.devicePixelRatio || 1), canvas2.height / (window.devicePixelRatio || 1));
       }
     }
 
-    // =========== DRAG SCRUBBING ===========
+    // ==================== DRAG SCRUBBING ====================
 
     function startDrag(event) {
       isDragging = true;
@@ -319,7 +347,7 @@
       canvasContainer.style.cursor = "grab";
     }
 
-    // =========== TOGGLE ISOLATION ON CLICK ===========
+    // ==================== CLICK TO TOGGLE ISOLATION ====================
 
     function toggleIsolation() {
       // Only toggle if the user didn't drag far
@@ -334,7 +362,7 @@
       }
     }
 
-    // =========== ADD EVENT LISTENERS ===========
+    // ==================== EVENT LISTENERS ====================
 
     canvasContainer.addEventListener("mousedown", startDrag);
     canvasContainer.addEventListener("mousemove", moveDrag);
@@ -361,7 +389,7 @@
       setActiveButton(this);
     });
 
-    // =========== FETCH AND START ===========
+    // ==================== FETCH & START ====================
     fetchImageLists();
   </script>
 </body>
