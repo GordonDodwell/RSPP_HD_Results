@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOA Results Viewer</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #2c2c2c; /* Dark background */
+      font-family: Arial, sans-serif;
+      color: #eee; /* Light text */
+    }
+
+    h2 {
+      margin-top: 30px;
+      font-weight: bold;
+    }
+
+    /* Modern tab-like buttons (inspired by your snippet) */
+    .tab {
+      /* If you truly want no bar behind them, remove the background-color or set it to 'transparent' */
+      background-color: #444; 
+      border-radius: 10px;
+      margin: 20px 0; /* spacing around the container */
+      transition: all 0.3s ease-in-out;
+      display: inline-block; /* Keep the buttons together in a row */
+      overflow: hidden; /* so rounded corners apply nicely */
+    }
+
+    .tab button {
+      background-color: inherit; /* use parent's background color (#444) */
+      float: left; 
+      border: none;
+      outline: none;
+      cursor: pointer;
+      padding: 14px 20px;
+      transition: 0.3s;
+      font-size: 17px;
+      border-radius: 0; /* no rounding on each button edge, but the container is rounded */
+      color: #151515;
+      font-weight: 600;
+    }
+
+    .tab button:hover {
+      background-color: #555;
+      color: #999; /* a lighter gray text on hover */
+    }
+
+    .tab button.active {
+      background-color: #777; 
+      color: #eee; /* highlight the active button */
+    }
+
+    .canvas-container {
+      min-height: 30vw !important;
+      width: 90vw;
+      max-width: 90vw;
+      position: relative;
+      display: block;
+      margin: 1rem auto;
+      cursor: grab;
+      transition: opacity 0.1s ease-in-out;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      border: 2px solid #2c2c2c;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>SOA Results Viewer</h2>
+
+  <!-- Buttons in a tab container, with “50 ms” as the default active -->
+  <div class="tab">
+    <button id="btn50" class="tablinks active">50 ms</button>
+    <button id="btn100" class="tablinks">100 ms</button>
+    <button id="btn200" class="tablinks">200 ms</button>
+  </div>
+
+  <div class="canvas-container">
+      <canvas id="canvasSet1"></canvas>
+      <canvas id="canvasSet2" style="opacity: 0;"></canvas>
+  </div>
+
+  <script>
+    let canvas1 = document.getElementById("canvasSet1");
+    let ctx1 = canvas1.getContext("2d");
+    let canvas2 = document.getElementById("canvasSet2");
+    let ctx2 = canvas2.getContext("2d");
+    let canvasContainer = document.querySelector(".canvas-container");
+
+    let allImages = {};
+    let imagesSet1 = [];
+    let imagesSet2 = [];
+
+    // Scrubbing variables
+    let currentFrame = 0;
+    let totalImages = 1;
+    let isIsolated = false;
+
+    // Drag variables
+    let isDragging = false;
+    let startX = 0;
+    let dragDistance = 0;
+
+    // -------------- Load all 6 sets --------------
+    async function fetchImageLists() {
+      try {
+        const response = await fetch("images.json");
+        const data = await response.json();
+
+        for (let setKey in data) {
+          let path = data[setKey].path;
+          let filenames = data[setKey].images;
+          let imageArray = filenames.map(filename => {
+            let img = new Image();
+            img.src = path + filename;
+            return img;
+          });
+          allImages[setKey] = imageArray;
+        }
+
+        // Default to sets 1 & 2 ("50 ms")
+        imagesSet1 = allImages["set1"];
+        imagesSet2 = allImages["set2"];
+        totalImages = imagesSet1.length;
+
+        imagesSet1[0].onload = () => {
+          updateCanvasSize();
+          drawImages();
+        };
+      } catch (error) {
+        console.error("Error loading image lists:", error);
+      }
+    }
+
+    // -------------- Switch pairs, preserving fraction --------------
+    function switchSets(pair) {
+      let oldFraction = 0;
+      if (totalImages > 1) {
+        oldFraction = currentFrame / (totalImages - 1);
+      }
+
+      if (pair === "50") {
+        imagesSet1 = allImages["set1"];
+        imagesSet2 = allImages["set2"];
+      } else if (pair === "100") {
+        imagesSet1 = allImages["set3"];
+        imagesSet2 = allImages["set4"];
+      } else if (pair === "200") {
+        imagesSet1 = allImages["set5"];
+        imagesSet2 = allImages["set6"];
+      }
+
+      totalImages = imagesSet1.length;
+      if (totalImages > 1) {
+        currentFrame = oldFraction * (totalImages - 1);
+      } else {
+        currentFrame = 0;
+      }
+      drawImages();
+    }
+
+    // -------------- Update active button styling --------------
+    function setActiveButton(clickedBtn) {
+      document.querySelectorAll('.tablinks').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      clickedBtn.classList.add('active');
+    }
+
+    // -------------- Resizing logic --------------
+    function updateCanvasSize() {
+      let aspectRatio = 4050 / 1350; // 3:1
+      let maxWidth = window.innerWidth * 0.9;
+      let maxHeight = window.innerHeight * 0.6;
+      
+      let newWidth = maxWidth;
+      let newHeight = newWidth / aspectRatio;
+
+      if (newHeight > maxHeight) {
+        newHeight = maxHeight;
+        newWidth = newHeight * aspectRatio;
+      }
+
+      canvas1.width = newWidth;
+      canvas1.height = newHeight;
+      canvas2.width = newWidth;
+      canvas2.height = newHeight;
+      drawImages();
+    }
+
+    // -------------- Draw with blending --------------
+    function drawImages() {
+      let index = Math.floor(currentFrame);
+      let alpha = currentFrame - index;
+
+      ctx1.clearRect(0, 0, canvas1.width, canvas1.height);
+      ctx2.clearRect(0, 0, canvas2.width, canvas2.height);
+
+      if (!imagesSet1[index] || !imagesSet2[index]) return;
+
+      let currentImg1 = imagesSet1[index];
+      let currentImg2 = imagesSet2[index];
+
+      if (index >= imagesSet1.length - 1) {
+        ctx1.globalAlpha = 1;
+        ctx1.drawImage(currentImg1, 0, 0, canvas1.width, canvas1.height);
+        ctx2.globalAlpha = 1;
+        ctx2.drawImage(currentImg2, 0, 0, canvas2.width, canvas2.height);
+        return;
+      }
+
+      let nextImg1 = imagesSet1[index + 1];
+      let nextImg2 = imagesSet2[index + 1];
+      let transitionStart = 0.7;
+      let transitionEnd = 1.0;
+
+      if (alpha < transitionStart) {
+        ctx1.globalAlpha = 1;
+        ctx1.drawImage(currentImg1, 0, 0, canvas1.width, canvas1.height);
+        ctx2.globalAlpha = 1;
+        ctx2.drawImage(currentImg2, 0, 0, canvas2.width, canvas2.height);
+      } else {
+        let blendAlpha = (alpha - transitionStart) / (transitionEnd - transitionStart);
+        ctx1.globalAlpha = 1;
+        ctx1.drawImage(currentImg1, 0, 0, canvas1.width, canvas1.height);
+        ctx2.globalAlpha = 1;
+        ctx2.drawImage(currentImg2, 0, 0, canvas2.width, canvas2.height);
+
+        ctx1.globalAlpha = blendAlpha;
+        ctx1.drawImage(nextImg1, 0, 0, canvas1.width, canvas1.height);
+        ctx2.globalAlpha = blendAlpha;
+        ctx2.drawImage(nextImg2, 0, 0, canvas2.width, canvas2.height);
+      }
+    }
+
+    // -------------- Drag logic with fraction-based movement --------------
+    function startDrag(event) {
+      isDragging = true;
+      startX = event.touches ? event.touches[0].clientX : event.clientX;
+      dragDistance = 0;
+      canvasContainer.style.cursor = "grabbing";
+    }
+
+    function moveDrag(event) {
+      if (!isDragging) return;
+
+      let currentX = event.touches ? event.touches[0].clientX : event.clientX;
+      let deltaX = currentX - startX;
+      dragDistance += Math.abs(deltaX);
+
+      let containerWidth = canvasContainer.clientWidth;
+      let framesRange = imagesSet1.length - 1; 
+      if (framesRange < 1) return;
+
+      // fraction of container width
+      let fractionDelta = deltaX / containerWidth;
+      let scrubSensitivity = 1.4; // tweak to taste
+      fractionDelta *= scrubSensitivity;
+
+      currentFrame += fractionDelta * framesRange;
+      if (currentFrame < 0) currentFrame = 0;
+      if (currentFrame > framesRange) currentFrame = framesRange;
+
+      drawImages();
+      startX = currentX;
+    }
+
+    function endDrag() {
+      isDragging = false;
+      canvasContainer.style.cursor = "grab";
+    }
+
+    // -------------- Click to toggle isolation --------------
+    function toggleIsolation() {
+      if (dragDistance < 5) {
+        isIsolated = !isIsolated;
+        canvas1.style.opacity = isIsolated ? "0" : "1";
+        canvas2.style.opacity = isIsolated ? "1" : "0";
+        canvasContainer.style.opacity = "0.7";
+        setTimeout(() => {
+          canvasContainer.style.opacity = "1";
+        }, 100);
+      }
+    }
+
+    canvasContainer.addEventListener("mousedown", startDrag);
+    canvasContainer.addEventListener("mousemove", moveDrag);
+    canvasContainer.addEventListener("mouseup", endDrag);
+    canvasContainer.addEventListener("click", toggleIsolation);
+
+    canvasContainer.addEventListener("touchstart", startDrag);
+    canvasContainer.addEventListener("touchmove", moveDrag);
+    canvasContainer.addEventListener("touchend", endDrag);
+    canvasContainer.addEventListener("touchend", toggleIsolation);
+
+    window.addEventListener("resize", updateCanvasSize);
+
+    // -------------- Hook up our fancy buttons --------------
+    // By default, the "50 ms" button is marked as .active in HTML
+    document.getElementById("btn50").addEventListener("click", function() {
+      switchSets("50");
+      setActiveButton(this);
+    });
+    document.getElementById("btn100").addEventListener("click", function() {
+      switchSets("100");
+      setActiveButton(this);
+    });
+    document.getElementById("btn200").addEventListener("click", function() {
+      switchSets("200");
+      setActiveButton(this);
+    });
+
+    // -------------- Start --------------
+    fetchImageLists();
+  </script>
+</body>
+</html>

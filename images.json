@@ -1,0 +1,58 @@
+{
+    "set1": {
+        "path": "SOA_experiment/50_SOA/smoothed_figures1/",
+        "images": [
+            "50_ms_SOA_fig1.png", "50_ms_SOA_fig2.png", "50_ms_SOA_fig3.png", "50_ms_SOA_fig4.png",
+            "50_ms_SOA_fig5.png", "50_ms_SOA_fig6.png", "50_ms_SOA_fig7.png", "50_ms_SOA_fig8.png",
+            "50_ms_SOA_fig9.png", "50_ms_SOA_fig10.png", "50_ms_SOA_fig11.png", "50_ms_SOA_fig12.png",
+            "50_ms_SOA_fig13.png", "50_ms_SOA_fig14.png", "50_ms_SOA_fig15.png", "50_ms_SOA_fig16.png",
+            "50_ms_SOA_fig17.png", "50_ms_SOA_fig18.png", "50_ms_SOA_fig19.png", "50_ms_SOA_fig20.png",
+            "50_ms_SOA_fig21.png", "50_ms_SOA_fig22.png", "50_ms_SOA_fig23.png", "50_ms_SOA_fig24.png",
+            "50_ms_SOA_fig25.png", "50_ms_SOA_fig26.png", "50_ms_SOA_final.png"
+        ]
+    },
+    "set2": {
+        "path": "SOA_experiment/50_SOA/smoothed_figures2/",
+        "images": [
+            "50_ms_SOA_fig1.png", "50_ms_SOA_fig2.png", "50_ms_SOA_fig3.png", "50_ms_SOA_fig4.png",
+            "50_ms_SOA_fig5.png", "50_ms_SOA_fig6.png", "50_ms_SOA_fig7.png", "50_ms_SOA_fig8.png",
+            "50_ms_SOA_fig9.png", "50_ms_SOA_fig10.png", "50_ms_SOA_fig11.png", "50_ms_SOA_fig12.png",
+            "50_ms_SOA_fig13.png", "50_ms_SOA_fig14.png", "50_ms_SOA_fig15.png", "50_ms_SOA_fig16.png",
+            "50_ms_SOA_fig17.png", "50_ms_SOA_fig18.png", "50_ms_SOA_fig19.png", "50_ms_SOA_fig20.png",
+            "50_ms_SOA_fig21.png", "50_ms_SOA_fig22.png", "50_ms_SOA_fig23.png", "50_ms_SOA_fig24.png",
+            "50_ms_SOA_fig25.png", "50_ms_SOA_fig26.png", "50_ms_SOA_final.png"
+        ]
+    },
+    "set3": {
+        "path": "SOA_experiment/100_SOA/smoothed_figures1/",
+        "images": [
+            "100_ms_SOA_fig1.png", "100_ms_SOA_fig2.png", "100_ms_SOA_fig3.png", "100_ms_SOA_fig4.png",
+            "100_ms_SOA_fig5.png", "100_ms_SOA_fig6.png", "100_ms_SOA_fig7.png", "100_ms_SOA_fig8.png",
+            "100_ms_SOA_fig9.png", "100_ms_SOA_fig10.png", "100_ms_SOA_fig11.png", "100_ms_SOA_fig12.png",
+            "100_ms_SOA_fig13.png", "100_ms_SOA_fig14.png", "100_ms_SOA_final.png"
+        ]
+    },
+    "set4": {
+        "path": "SOA_experiment/100_SOA/smoothed_figures2/",
+        "images": [
+            "100_ms_SOA_fig1.png", "100_ms_SOA_fig2.png", "100_ms_SOA_fig3.png", "100_ms_SOA_fig4.png",
+            "100_ms_SOA_fig5.png", "100_ms_SOA_fig6.png", "100_ms_SOA_fig7.png", "100_ms_SOA_fig8.png",
+            "100_ms_SOA_fig9.png", "100_ms_SOA_fig10.png", "100_ms_SOA_fig11.png", "100_ms_SOA_fig12.png",
+            "100_ms_SOA_fig13.png", "100_ms_SOA_fig14.png", "100_ms_SOA_final.png"
+        ]
+    },
+    "set5": {
+        "path": "SOA_experiment/200_SOA/smoothed_figures1/",
+        "images": [
+            "200_ms_SOA_fig1.png", "200_ms_SOA_fig2.png", "200_ms_SOA_fig3.png", "200_ms_SOA_fig4.png",
+            "200_ms_SOA_fig5.png", "200_ms_SOA_fig6.png", "200_ms_SOA_fig7.png", "200_ms_SOA_final.png"
+        ]
+    },
+    "set6": {
+        "path": "SOA_experiment/200_SOA/smoothed_figures2/",
+        "images": [
+            "200_ms_SOA_fig1.png", "200_ms_SOA_fig2.png", "200_ms_SOA_fig3.png", "200_ms_SOA_fig4.png",
+            "200_ms_SOA_fig5.png", "200_ms_SOA_fig6.png", "200_ms_SOA_fig7.png", "200_ms_SOA_final.png"
+        ]
+    }
+}
